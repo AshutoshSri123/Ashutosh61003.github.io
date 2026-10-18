@@ -92,14 +92,15 @@ export default function Landing() {
     suppressClick.current = false;
     endDockHold();
     event.currentTarget.setPointerCapture(event.pointerId);
-    const state = { x: event.clientX, y: event.clientY, held: false, moved: false, index: Math.max(0, pages.findIndex((page) => page.to === pathname)) };
+    const state = { x: event.clientX, y: event.clientY, held: false, moved: false, opened: !expanded, index: Math.max(0, pages.findIndex((page) => page.to === pathname)) };
     state.timer = window.setTimeout(() => {
       state.held = true;
       setExpanded(true);
       setSteering(true);
       setSelection(state.index);
-    }, 2000);
+    }, 1000);
     gesture.current = state;
+    if (state.opened) setExpanded(true);
   };
   const moveGesture = (event) => {
     const state = gesture.current;
@@ -131,8 +132,12 @@ export default function Landing() {
     if (!state) return;
     window.clearTimeout(state.timer);
     const cancelled = event.type !== "pointerup";
+    suppressClick.current = true;
+    if (!state.held && !cancelled) {
+      if (!state.opened) setExpanded(false);
+      else menuRef.current?.querySelector("a")?.focus({ preventScroll: true });
+    }
     if (state.held) {
-      suppressClick.current = true;
       if (cancelled) setExpanded(false);
       if (!cancelled && state.moved && state.index >= 0) {
         navigate(pages[state.index].to);
@@ -160,7 +165,7 @@ export default function Landing() {
       }
     };
     document.addEventListener("keydown", close);
-    if (!gesture.current?.held) menuRef.current?.querySelector("a")?.focus({ preventScroll: true });
+    if (!gesture.current) menuRef.current?.querySelector("a")?.focus({ preventScroll: true });
     return () => document.removeEventListener("keydown", close);
   }, [expanded]);
   useEffect(() => {

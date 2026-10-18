@@ -196,7 +196,7 @@ test("holding the dock reveals labels, and holding and sliding the plus selects 
   await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-expanded/);
 });
 
-test("two-second hold grows the circle and steers within all grid boundaries", async ({ page }) => {
+test("one-second hold grows the circle and steers within all grid boundaries", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   const toggle = page.locator(".mobile-menu-toggle");
@@ -204,11 +204,13 @@ test("two-second hold grows the circle and steers within all grid boundaries", a
   let x = plus.x + plus.width / 2, y = plus.y + plus.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.waitForTimeout(1200);
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page.waitForTimeout(500);
   await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-steering/);
   await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
-  await expect(toggle).toHaveCSS("transform", "matrix(1.15, 0, 0, 1.15, 0, 0)");
+  await expect(toggle).toHaveCSS("transform", "matrix(1.2, 0, 0, 1.2, 0, 0)");
   await expect(toggle.locator("svg")).toHaveCSS("opacity", "0");
+
   const move = async (dx, dy, label) => {
     x += dx; y += dy;
     await page.mouse.move(x, y);
@@ -278,3 +280,26 @@ test("quick dock taps never leave delayed expansion and repeated menu closing cl
   await expect(page.locator(".mobile-dock")).toHaveCSS("height", "58px");
   await expect(page.locator(".dock-label").first()).toHaveCSS("opacity", "0");
 });
+
+for (const theme of ["light", "dark"]) {
+  test(`steering highlight is brighter in ${theme} mode`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    if (theme === "dark") await page.getByRole("button", { name: "Switch to dark mode" }).click();
+    const toggle = page.locator(".mobile-menu-toggle");
+    const box = await toggle.boundingBox();
+    await page.mouse.move(box.x + 29, box.y + 29);
+    await page.mouse.down();
+    await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
+    await expect.poll(() => page.evaluate(() => {
+      const context = document.createElement("canvas").getContext("2d");
+      const brightness = (selector) => {
+        context.fillStyle = getComputedStyle(document.querySelector(selector)).backgroundColor;
+        context.fillRect(0, 0, 1, 1);
+        return context.getImageData(0, 0, 1, 1).data[0];
+      };
+      return brightness(".gesture-selected > span") - brightness(".mobile-menu-grid a:not(.gesture-selected) > span");
+    })).toBeGreaterThan(10);
+    await page.mouse.up();
+  });
+}
