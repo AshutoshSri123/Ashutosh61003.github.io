@@ -187,27 +187,72 @@ test("holding the dock reveals labels, and holding and sliding the plus selects 
   await page.mouse.move(plus.x + plus.width / 2, plus.y + plus.height / 2);
   await page.mouse.down();
   await expect(page.locator(".mobile-navigation")).toHaveClass(/is-expanded/);
-  await page.mouse.move(plus.x + plus.width / 2, plus.y + plus.height / 2 - 20, { steps: 5 });
+  await page.mouse.move(plus.x + plus.width / 2, plus.y + plus.height / 2 - 16, { steps: 5 });
+  await expect(page.locator(".gesture-selected")).toHaveText("Home");
+  await page.mouse.move(plus.x + plus.width / 2 + 32, plus.y + plus.height / 2 - 16);
   await expect(page.locator(".gesture-selected")).toHaveText("Work");
   await page.mouse.up();
   await expect(page).toHaveURL(/\/work$/);
   await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-expanded/);
 });
 
-test("sensitive plus gesture reaches every page in a short thumb movement", async ({ page }) => {
+test("two-second hold grows the circle and steers within all grid boundaries", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  const plus = await page.getByRole("button", { name: "Open page menu" }).boundingBox();
-  const x = plus.x + plus.width / 2, y = plus.y + plus.height / 2;
+  const toggle = page.locator(".mobile-menu-toggle");
+  const plus = await toggle.boundingBox();
+  let x = plus.x + plus.width / 2, y = plus.y + plus.height / 2;
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await expect(page.locator(".mobile-navigation")).toHaveClass(/is-expanded/);
-  for (const [index, name] of ["Home", "Portfolio", "Work", "Projects", "Identity", "Thoughts", "Blogs", "Photos", "Contact", "Dreams"].entries()) {
-    await page.mouse.move(x, y - Math.max(6, index * 8 + 1));
-    await expect(page.locator(".gesture-selected")).toHaveText(name);
-  }
+  await page.waitForTimeout(1200);
+  await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-steering/);
+  await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
+  await expect(toggle).toHaveCSS("transform", "matrix(1.15, 0, 0, 1.15, 0, 0)");
+  await expect(toggle.locator("svg")).toHaveCSS("opacity", "0");
+  const move = async (dx, dy, label) => {
+    x += dx; y += dy;
+    await page.mouse.move(x, y);
+    await expect(page.locator(".gesture-selected")).toHaveText(label);
+  };
+  await move(-32, 0, "Home"); // Left edge cannot wrap to another row.
+  await move(16, 0, "Portfolio");
+  await move(32, 0, "Projects");
+  await move(32, 0, "Projects");
+  await move(-16, 0, "Work"); // Immediate reversal at the right edge.
+  await move(0, 16, "Blogs");
+  await move(0, 16, "Dreams"); // The last row has only two cells.
+  await move(16, 0, "Dreams");
+  await move(0, 16, "Dreams");
+  await move(-16, 0, "Contact");
+  await move(0, -16, "Identity");
+  await move(0, -16, "Home");
+  await move(0, -16, "Home");
+  await move(16, 16, "Thoughts"); // Diagonal movement follows both axes.
   await page.mouse.up();
-  await expect(page).toHaveURL(/\/dreams$/);
+  await expect(page).toHaveURL(/\/thoughts$/);
+  await expect(toggle.locator("svg")).toHaveCSS("opacity", "1");
+  await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-steering/);
+});
+
+test("releasing without steering and cancellation restore the held button", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const toggle = page.locator(".mobile-menu-toggle");
+  const box = await toggle.boundingBox();
+  await page.mouse.move(box.x + 29, box.y + 29);
+  await page.mouse.down();
+  await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
+  await page.mouse.up();
+  await expect(page).toHaveURL("http://127.0.0.1:5177/");
+  await expect(toggle.locator("svg")).toHaveCSS("opacity", "1");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page.mouse.down();
+  await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
+  await toggle.dispatchEvent("pointercancel", { pointerId: 1 });
+  await page.mouse.up();
+  await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-steering/);
+  await expect(toggle.locator("svg")).toHaveCSS("opacity", "1");
+  await expect(page).toHaveURL("http://127.0.0.1:5177/");
 });
 test("quick dock taps never leave delayed expansion and repeated menu closing clears its surface", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

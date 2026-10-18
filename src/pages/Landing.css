@@ -294,3 +294,14 @@ html.landing-mode body {
 @media (prefers-reduced-motion: reduce) {
   html.landing-mode, html.landing-mode body, .landing-page, .landing-portrait img, .landing-theme, .theme-symbols svg { transition: none; }
 }
+
+/* Held steering keeps the circular control under the finger. */
+@media (max-width: 600px) {
+  .mobile-menu-toggle svg {
+    opacity: 1;
+    transition: opacity 550ms cubic-bezier(.4,0,.2,1), transform 550ms cubic-bezier(.22,1,.36,1);
+  }
+  .is-steering .mobile-menu-toggle,
+  .is-steering .mobile-menu-toggle:active { transform: scale(1.15); }
+  .is-steering .mobile-menu-toggle svg { opacity: 0; }
+}

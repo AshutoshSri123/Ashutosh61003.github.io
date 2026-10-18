@@ -69,44 +69,78 @@ export default function Landing() {
   }, []);
   const [selection, setSelection] = useState(-1);
   const gesture = useRef(null);
+  const [steering, setSteering] = useState(false);
   const suppressClick = useRef(false);
-  useEffect(() => () => window.clearTimeout(gesture.current?.timer), []);
+  useEffect(() => {
+    const cancel = () => {
+      window.clearTimeout(gesture.current?.timer);
+      gesture.current = null;
+      suppressClick.current = true;
+      setSteering(false);
+      setSelection(-1);
+    };
+    window.addEventListener("blur", cancel);
+    document.addEventListener("visibilitychange", cancel);
+    return () => {
+      cancel();
+      window.removeEventListener("blur", cancel);
+      document.removeEventListener("visibilitychange", cancel);
+    };
+  }, []);
   const beginGesture = (event) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || !event.isPrimary || gesture.current) return;
     suppressClick.current = false;
     endDockHold();
     event.currentTarget.setPointerCapture(event.pointerId);
-    const state = { x: event.clientX, y: event.clientY, held: false, moved: false, index: -1 };
+    const state = { x: event.clientX, y: event.clientY, held: false, moved: false, index: Math.max(0, pages.findIndex((page) => page.to === pathname)) };
     state.timer = window.setTimeout(() => {
       state.held = true;
       setExpanded(true);
-    }, 240);
+      setSteering(true);
+      setSelection(state.index);
+    }, 2000);
     gesture.current = state;
   };
   const moveGesture = (event) => {
     const state = gesture.current;
-    if (!state?.held) return;
-    const dx = event.clientX - state.x;
-    const dy = state.y - event.clientY;
-    if (Math.hypot(dx, dy) < 5 && !state.moved) return;
-    state.moved = true;
-    // Short upward OR leftward thumb travel reaches every option without tile hit-testing stealing selection.
-    state.index = Math.max(0, Math.min(pages.length - 1, Math.floor(Math.max(dy, -dx) / 8)));
+    if (!state) return;
+    if (!state.held) {
+      state.x = event.clientX;
+      state.y = event.clientY;
+      return;
+    }
+    // Consume small relative steps so reversing at an edge responds immediately.
+    const step = 16;
+    const dx = Math.trunc((event.clientX - state.x) / step);
+    const dy = Math.trunc((event.clientY - state.y) / step);
+    if (!dx && !dy) return;
+    if (dx) state.x = event.clientX;
+    if (dy) state.y = event.clientY;
+    const row = Math.floor(state.index / 4);
+    const column = state.index % 4;
+    const nextRow = Math.max(0, Math.min(2, row + dy));
+    const lastColumn = Math.min(3, pages.length - nextRow * 4 - 1);
+    const nextColumn = Math.max(0, Math.min(lastColumn, column + dx));
+    const nextIndex = nextRow * 4 + nextColumn;
+    state.moved ||= nextIndex !== state.index;
+    state.index = nextIndex;
     setSelection(state.index);
   };
   const endGesture = (event) => {
     const state = gesture.current;
     if (!state) return;
     window.clearTimeout(state.timer);
+    const cancelled = event.type !== "pointerup";
     if (state.held) {
-      suppressClick.current = event.type !== "pointercancel";
-      if (event.type === "pointercancel") setExpanded(false);
-      if (event.type !== "pointercancel" && state.moved && state.index >= 0) {
+      suppressClick.current = true;
+      if (cancelled) setExpanded(false);
+      if (!cancelled && state.moved && state.index >= 0) {
         navigate(pages[state.index].to);
         setExpanded(false);
       }
     }
     gesture.current = null;
+    setSteering(false);
     setSelection(-1);
   };
   const [expanded, setExpanded] = useState(false);
@@ -116,6 +150,11 @@ export default function Landing() {
     if (!expanded) return;
     const close = (event) => {
       if (event.key === "Escape") {
+        window.clearTimeout(gesture.current?.timer);
+        gesture.current = null;
+        setSteering(false);
+        setSelection(-1);
+        suppressClick.current = true;
         setExpanded(false);
         toggleRef.current?.focus();
       }
@@ -198,7 +237,7 @@ export default function Landing() {
           <span>This is my small space on the internet to share my work and whatever I’m curious about next. Have a look around, check out what I’ve built, or just say hello. I’d love to hear from you.</span>
         </p>
       </div>}
-      <div className={`mobile-navigation ${expanded ? "is-expanded" : ""} ${pressed ? "is-pressed" : ""}`}>
+      <div className={`mobile-navigation ${expanded ? "is-expanded" : ""} ${pressed ? "is-pressed" : ""} ${steering ? "is-steering" : ""}`}>
         <button className="mobile-menu-backdrop" aria-label="Close page menu" tabIndex={-1} onClick={() => setExpanded(false)} />
         <div className="mobile-menu" id="mobile-page-menu" ref={menuRef} inert={expanded ? undefined : ""} aria-hidden={!expanded}>
           <svg className="mobile-menu-surface" viewBox="0 0 350 300" preserveAspectRatio="none" aria-hidden="true">
@@ -219,7 +258,7 @@ export default function Landing() {
             </Link>
           ))}
         </nav>
-        <button ref={toggleRef} className="mobile-menu-toggle" aria-label={expanded ? "Close page menu" : "Open page menu"} aria-expanded={expanded} aria-controls="mobile-page-menu" onPointerDown={beginGesture} onPointerMove={moveGesture} onPointerUp={endGesture} onPointerCancel={endGesture} onContextMenu={(event) => event.preventDefault()} onClick={() => {
+        <button ref={toggleRef} className="mobile-menu-toggle" aria-label={expanded ? "Close page menu" : "Open page menu"} aria-expanded={expanded} aria-controls="mobile-page-menu" onPointerDown={beginGesture} onPointerMove={moveGesture} onPointerUp={endGesture} onPointerCancel={endGesture} onLostPointerCapture={endGesture} onContextMenu={(event) => event.preventDefault()} onClick={() => {
           if (suppressClick.current) { suppressClick.current = false; return; }
           setExpanded((value) => !value);
         }}>
