@@ -208,7 +208,7 @@ test("one-second hold grows the circle and steers within all grid boundaries", a
   await page.waitForTimeout(500);
   await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-steering/);
   await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
-  await expect(toggle).toHaveCSS("transform", "matrix(1.2, 0, 0, 1.2, 0, 0)");
+  await expect(toggle).toHaveCSS("transform", "matrix(1.4, 0, 0, 1.4, 0, 0)");
   await expect(toggle.locator("svg")).toHaveCSS("opacity", "0");
 
   const move = async (dx, dy, label) => {
@@ -301,5 +301,52 @@ for (const theme of ["light", "dark"]) {
       return brightness(".gesture-selected > span") - brightness(".mobile-menu-grid a:not(.gesture-selected) > span");
     })).toBeGreaterThan(10);
     await page.mouse.up();
+  });
+}
+
+test("navigation pulses for touch, hold, each new selection and release", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.hapticCalls = [];
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: (pattern) => {
+      window.hapticCalls.push(pattern);
+      return true;
+    } });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const toggle = page.locator(".mobile-menu-toggle");
+  const box = await toggle.boundingBox();
+  const x = box.x + 29, y = box.y + 29;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  expect(await page.evaluate(() => window.hapticCalls)).toEqual([[8, 20, 12]]);
+  await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
+  expect(await page.evaluate(() => window.hapticCalls)).toEqual([[8, 20, 12], [14, 24, 20]]);
+  await page.mouse.move(x + 16, y);
+  await expect(page.locator(".gesture-selected")).toHaveText("Portfolio");
+  await page.mouse.move(x + 32, y);
+  await expect(page.locator(".gesture-selected")).toHaveText("Work");
+  await page.mouse.move(x + 32, y - 16); // Clamped edge does not pulse.
+  expect(await page.evaluate(() => window.hapticCalls)).toEqual([[8, 20, 12], [14, 24, 20], 10, 10]);
+  await page.mouse.move(x + 16, y - 16);
+  await expect(page.locator(".gesture-selected")).toHaveText("Portfolio");
+  await page.mouse.move(x, y - 16);
+  await expect(page.locator(".gesture-selected")).toHaveText("Home");
+  await page.mouse.up();
+  expect(await page.evaluate(() => window.hapticCalls.at(-1))).toBe(12);
+  await page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "Home", exact: true }).click();
+  expect(await page.evaluate(() => window.hapticCalls.at(-1))).toBe(8);
+});
+
+for (const mode of ["missing", "throws"]) {
+  test(`navigation works when vibration ${mode}`, async ({ page }) => {
+    await page.addInitScript((mode) => {
+      Object.defineProperty(navigator, "vibrate", { configurable: true, value: mode === "missing" ? undefined : () => { throw new Error("Unavailable"); } });
+    }, mode);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Open page menu" }).click();
+    await page.getByRole("navigation", { name: "All pages" }).getByRole("link", { name: "Thoughts", exact: true }).click();
+    await expect(page).toHaveURL(/\/thoughts$/);
   });
 }

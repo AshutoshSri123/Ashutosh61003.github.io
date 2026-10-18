@@ -302,6 +302,6 @@ html.landing-mode body {
     transition: opacity 550ms cubic-bezier(.4,0,.2,1), transform 550ms cubic-bezier(.22,1,.36,1);
   }
   .is-steering .mobile-menu-toggle,
-  .is-steering .mobile-menu-toggle:active { transform: scale(1.2); }
+  .is-steering .mobile-menu-toggle:active { transform: scale(1.4); }
   .is-steering .mobile-menu-toggle svg { opacity: 0; }
 }

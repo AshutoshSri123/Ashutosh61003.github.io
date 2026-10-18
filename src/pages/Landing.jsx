@@ -3,6 +3,15 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Moon, Sun, Home, Briefcase, Layers, Mail, Plus, User, BookOpen, Camera, Lightbulb } from "lucide-react";
 import "./Landing.css";
 
+// Unsupported or disabled vibration must never interrupt navigation.
+function haptic(pattern = 8) {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* Device feedback is optional. */
+  }
+}
+
 const pages = [
   { label: "Home", to: "/", icon: Home },
   { label: "Portfolio", to: "/portfolio", icon: User },
@@ -48,7 +57,10 @@ export default function Landing() {
   };
   const beginDockHold = () => {
     endDockHold();
-    dockHoldTimer.current = window.setTimeout(() => setPressed(true), 1000);
+    dockHoldTimer.current = window.setTimeout(() => {
+      setPressed(true);
+      haptic([14, 24, 20]);
+    }, 1000);
   };
   useEffect(() => {
     const reset = () => {
@@ -97,9 +109,11 @@ export default function Landing() {
       state.held = true;
       setExpanded(true);
       setSteering(true);
+      haptic([14, 24, 20]);
       setSelection(state.index);
     }, 1000);
     gesture.current = state;
+    haptic(state.opened ? [8, 20, 12] : 8);
     if (state.opened) setExpanded(true);
   };
   const moveGesture = (event) => {
@@ -123,6 +137,7 @@ export default function Landing() {
     const lastColumn = Math.min(3, pages.length - nextRow * 4 - 1);
     const nextColumn = Math.max(0, Math.min(lastColumn, column + dx));
     const nextIndex = nextRow * 4 + nextColumn;
+    if (nextIndex !== state.index) haptic(10);
     state.moved ||= nextIndex !== state.index;
     state.index = nextIndex;
     setSelection(state.index);
@@ -138,6 +153,7 @@ export default function Landing() {
       else menuRef.current?.querySelector("a")?.focus({ preventScroll: true });
     }
     if (state.held) {
+      if (!cancelled) haptic(12);
       if (cancelled) setExpanded(false);
       if (!cancelled && state.moved && state.index >= 0) {
         navigate(pages[state.index].to);
@@ -160,6 +176,7 @@ export default function Landing() {
         setSteering(false);
         setSelection(-1);
         suppressClick.current = true;
+        haptic(8);
         setExpanded(false);
         toggleRef.current?.focus();
       }
@@ -242,7 +259,11 @@ export default function Landing() {
           <span>This is my small space on the internet to share my work and whatever I’m curious about next. Have a look around, check out what I’ve built, or just say hello. I’d love to hear from you.</span>
         </p>
       </div>}
-      <div className={`mobile-navigation ${expanded ? "is-expanded" : ""} ${pressed ? "is-pressed" : ""} ${steering ? "is-steering" : ""}`}>
+      <div onPointerDownCapture={(event) => {
+        if (event.isPrimary && event.button === 0 && !event.target.closest(".mobile-menu-toggle")) haptic();
+      }} onClickCapture={(event) => {
+        if (event.detail === 0) haptic();
+      }} className={`mobile-navigation ${expanded ? "is-expanded" : ""} ${pressed ? "is-pressed" : ""} ${steering ? "is-steering" : ""}`}>
         <button className="mobile-menu-backdrop" aria-label="Close page menu" tabIndex={-1} onClick={() => setExpanded(false)} />
         <div className="mobile-menu" id="mobile-page-menu" ref={menuRef} inert={expanded ? undefined : ""} aria-hidden={!expanded}>
           <svg className="mobile-menu-surface" viewBox="0 0 350 300" preserveAspectRatio="none" aria-hidden="true">
