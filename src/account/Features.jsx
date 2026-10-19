@@ -38,6 +38,7 @@ const labels = { home: "Home", work: "Work", projects: "Projects", identity: "Id
 function EditablePage({ id, onHomeContent }) {
   const { admin } = useAccount();
   const initialized = useRef(false);
+  const editingRevision = useRef(0);
   const [saved, setSaved] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState(new URLSearchParams(location.search).has("edit"));
@@ -54,7 +55,10 @@ function EditablePage({ id, onHomeContent }) {
   useEffect(() => {
     if (loaded && !initialized.current) {
       initialized.current = true;
-      if (editing) setDraft({ title: saved?.title || labels[id], body: saved?.body || "" });
+      if (editing) {
+        editingRevision.current = saved?.revision || 0;
+        setDraft({ title: saved?.title || labels[id], body: saved?.body || "" });
+      }
     }
   }, [loaded, editing, saved, id]);
   async function save(event) {
@@ -63,8 +67,8 @@ function EditablePage({ id, onHomeContent }) {
       await runTransaction(db, async transaction => {
         const ref = doc(db, "sitePages", id);
         const current = await transaction.get(ref);
-        if ((current.data()?.revision || 0) !== (saved?.revision || 0)) throw new Error("This page changed elsewhere. Cancel and reopen the editor to load the latest version.");
-        transaction.set(ref, { title: draft.title.trim(), body: draft.body.trim(), revision: (saved?.revision || 0) + 1, updatedAt: serverTimestamp() });
+        if ((current.data()?.revision || 0) !== editingRevision.current) throw new Error("This page changed elsewhere. Cancel and reopen the editor to load the latest version.");
+        transaction.set(ref, { title: draft.title.trim(), body: draft.body.trim(), revision: editingRevision.current + 1, updatedAt: serverTimestamp() });
       });
       setEditing(false); setStatus("Page published.");
     } catch (error) { setError(error.code ? "Couldn’t publish. Your draft is still here; please try again." : error.message); }
@@ -74,7 +78,7 @@ function EditablePage({ id, onHomeContent }) {
   if (id === "home" && !admin) return null;
   if (!admin && !saved?.body) return null;
   return <section className={`account-page ${id === "home" ? "account-home-editor" : ""}`}>
-    {admin && <div className="account-editor-bar"><span className="account-muted">{labels[id]} · Admin</span><button className="account-text-button" onClick={() => { setDraft({ title: saved?.title || labels[id], body: saved?.body || "" }); setEditing(!editing); setError(""); }}>{editing ? "Cancel editing" : "Edit page"}</button></div>}
+    {admin && <div className="account-editor-bar"><span className="account-muted">{labels[id]} · Admin</span><button className="account-text-button" onClick={() => { editingRevision.current = saved?.revision || 0; setDraft({ title: saved?.title || labels[id], body: saved?.body || "" }); setEditing(!editing); setError(""); }}>{editing ? "Cancel editing" : "Edit page"}</button></div>}
     {editing && admin ? <form className="account-editor" onSubmit={save}><label>Page title<input required maxLength={180} value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} /></label><label>{id === "home" ? "Homepage introduction" : "Page content (Markdown)"}<textarea rows={8} maxLength={30000} value={draft.body} onChange={e => setDraft({ ...draft, body: e.target.value })} /></label><button className="account-button" disabled={busy || !loaded || !draft.title.trim()}>{busy ? "Publishing…" : "Publish page"}</button></form> : id !== "home" && saved?.body ? <><h1>{saved.title}</h1><div className="account-prose"><ReactMarkdown>{saved.body}</ReactMarkdown></div></> : null}
     {admin && <><Alert>{error}</Alert><p role="status">{status}</p></>}
   </section>;

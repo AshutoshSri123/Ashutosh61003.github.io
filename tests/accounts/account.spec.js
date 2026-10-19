@@ -67,3 +67,19 @@ test("private DM delivers to admin and reply arrives live", async ({ page, brows
   await expect(page.getByText("Hello! Thanks for reaching out.", { exact: true })).toBeVisible();
   await admin.close();
 });
+
+test("an older admin draft cannot overwrite a page published in another tab", async ({ page, browser }) => {
+  await login(page, "ashu.61003@gmail.com", "Ashutosh");
+  await page.goto("/work?edit=1");
+  await page.getByLabel("Page content (Markdown)").fill("First tab publication.");
+  const other = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await login(other, "ashu.61003@gmail.com", "Ashutosh");
+  await other.goto("/work?edit=1");
+  await other.getByLabel("Page content (Markdown)").fill("Keep this unsaved draft.");
+  await page.getByRole("button", { name: "Publish page" }).click();
+  await expect(page.getByText("Page published.")).toBeVisible();
+  await other.getByRole("button", { name: "Publish page" }).click();
+  await expect(other.getByRole("alert")).toContainText("changed elsewhere");
+  await expect(other.getByLabel("Page content (Markdown)")).toHaveValue("Keep this unsaved draft.");
+  await other.close();
+});
