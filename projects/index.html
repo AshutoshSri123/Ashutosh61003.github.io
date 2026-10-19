@@ -2,7 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/images/ashutosh-avatar-rounded.png" />
+    <link id="browser-tab-icon" rel="icon" type="image/webp" href="/images/ashutosh-diptych-light.webp" />
+    <script>
+      (() => {
+        const browserTheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const updateTabIcon = () => {
+          document.getElementById('browser-tab-icon').href = browserTheme.matches
+            ? '/images/ashutosh-diptych-dark.webp'
+            : '/images/ashutosh-diptych-light.webp';
+        };
+        updateTabIcon();
+        browserTheme.addEventListener('change', updateTabIcon);
+      })();
+    </script>
     <link rel="apple-touch-icon" href="/images/ashutosh-avatar-rounded.png" />
     <meta name="description" content="Ashutosh Srivastava — personal website and portfolio." />
     <link rel="preload" as="image" href="/images/ashutosh-diptych-light.webp" type="image/webp" fetchpriority="high" />

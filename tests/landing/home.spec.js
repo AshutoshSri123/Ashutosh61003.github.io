@@ -400,3 +400,23 @@ test("timeline follows the dark theme and reduced-motion preference", async ({ p
   await expect(page.locator(".life-copy").first()).toHaveCSS("transform", "none");
   await expect(page.getByRole("heading", { name: "The beginning", exact: true })).toBeVisible();
 });
+
+for (const colorScheme of ["light", "dark"]) {
+  test(`browser tab portrait follows ${colorScheme} browser theme and live changes`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto("/");
+    const icon = page.locator('#browser-tab-icon');
+    await expect(icon).toHaveAttribute('href', `/images/ashutosh-diptych-${colorScheme}.webp`);
+    await page.getByRole('button', { name: 'Switch to dark mode' }).click();
+    await expect(icon).toHaveAttribute('href', `/images/ashutosh-diptych-${colorScheme}.webp`);
+    const nextTheme = colorScheme === 'dark' ? 'light' : 'dark';
+    await page.emulateMedia({ colorScheme: nextTheme });
+    await expect(icon).toHaveAttribute('href', `/images/ashutosh-diptych-${nextTheme}.webp`);
+    expect(await page.evaluate(async () => {
+      const image = new Image();
+      image.src = document.querySelector('#browser-tab-icon').href;
+      await image.decode();
+      return image.naturalWidth > 0;
+    })).toBe(true);
+  });
+}
