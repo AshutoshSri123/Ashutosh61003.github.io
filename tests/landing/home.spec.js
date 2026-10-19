@@ -502,3 +502,23 @@ test('profile name stays on one line across phone and desktop widths', async ({p
     expect(frame.topDifference).toBe(0);
   }
 });
+
+test('desktop introduction uses a centered narrow column and groups name with subtitle', async ({page}) => {
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  const content = await page.locator('.landing-content').boundingBox();
+  expect(content.width).toBeLessThanOrEqual(640);
+  expect(content.x + content.width / 2).toBeCloseTo(720,0);
+  for (const width of [1440,390]) {
+    await page.setViewportSize({width,height:900});
+    await expect(page.locator('.landing-profile-copy')).toHaveCSS('justify-content','flex-end');
+    const gap = await page.locator('.landing-profile-copy').evaluate(el => {
+      const title=el.querySelector('h1').getBoundingClientRect();
+      const subtitle=el.querySelector('.landing-subtitle').getBoundingClientRect();
+      return subtitle.top-title.bottom;
+    });
+    expect(gap).toBeLessThanOrEqual(1);
+    expect(gap).toBeGreaterThanOrEqual(-1);
+  }
+});
