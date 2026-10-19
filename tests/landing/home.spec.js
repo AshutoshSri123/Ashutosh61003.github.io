@@ -452,12 +452,12 @@ for (const [width, height] of [[1240, 1000], [390, 844], [320, 568], [844, 390]]
 test('life introduction links lead to pages and name uses Newsreader Italic', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator('.landing-content h1')).toHaveCSS('font-family', 'Newsreader, Georgia, serif');
+  await expect(page.locator('.landing-content h1')).toHaveCSS('font-family', 'Newsreader, serif');
   expect(await page.evaluate(() => document.fonts.check('italic 40px Newsreader'))).toBe(true);
   const intro = page.locator('.landing-intro');
-  await expect(intro).toContainText('whole life');
-  await expect(intro).toContainText('hold it for one second');
-  for (const [name, path] of [['timeline','/timeline'],['thoughts','/thoughts'],['stories','/blogs'],['dreams','/dreams'],['professional portfolio','/portfolio'],['projects','/projects'],['contact','/contact']]) {
+  await expect(intro).toContainText('VIT-AP graduate');
+  await expect(intro).toContainText('hold the round button for one second');
+  for (const [name, path] of [['timeline','/timeline'],['portfolio','/portfolio'],['contact','/contact']]) {
     const link = intro.getByRole('link', { name, exact: true });
     await expect(link).toHaveAttribute('href',path);
     await expect(link).toHaveCSS('font-weight','700');
@@ -466,3 +466,15 @@ test('life introduction links lead to pages and name uses Newsreader Italic', as
   await intro.getByRole('link',{name:'contact', exact:true}).click();
   await expect(page).toHaveURL(/\/contact$/);
 });
+
+for (const width of [390, 1440]) {
+  test(`inline plus opens full navbar at width ${width}`, async ({page}) => {
+    await page.setViewportSize({width,height:900});
+    await page.goto('/');
+    await expect(page.locator('.mobile-navigation')).toBeVisible();
+    await page.getByRole('button',{name:'Expand all pages'}).click();
+    await expect(page.getByRole('navigation',{name:'All pages'})).toBeVisible();
+    await page.getByRole('navigation',{name:'All pages'}).getByRole('link',{name:'Timeline',exact:true}).click();
+    await expect(page).toHaveURL(/\/timeline$/);
+  });
+}

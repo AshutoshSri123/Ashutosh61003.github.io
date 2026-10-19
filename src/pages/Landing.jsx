@@ -275,14 +275,15 @@ export default function Landing() {
             Ashutosh Srivastava
           </Link>
         </h1>
-        <p className="landing-subtitle">A life in progress</p>
+        <p className="landing-subtitle">A curious mind, thinking in products</p>
         </div>
         </header>
         <div className="landing-intro">
           {homeCopy ? <ReactMarkdown components={{ a: ({ href, children }) => <Link to={href}>{children}</Link> }}>{homeCopy}</ReactMarkdown> : <>
-          <p>I’m <strong>Ashutosh</strong>, from Pratapgarh, now building a life in Bangalore. From changing schools and preparing for JEE to studying at VIT-AP and joining Flurn, I’m still learning what matters to me. My <Link to="/timeline">timeline</Link> follows that journey.</p>
-          <p>This is a home for my whole life: the <Link to="/thoughts">thoughts</Link> I’m working through, the <Link to="/blogs">stories</Link> I write, and the <Link to="/dreams">dreams</Link> I’m growing into. For what I build and do, visit my <Link to="/portfolio">professional portfolio</Link> or explore my <Link to="/projects">projects</Link>. To talk, head to <Link to="/contact">contact</Link> and send me a message.</p>
-          <p>On mobile, the navbar has shortcuts. Tap + for all pages, or hold it for one second, slide to choose, and release.</p>
+          <p>I’m <strong>Ashutosh</strong>, a VIT-AP graduate interested in products, people, and the thinking that connects them. I like asking why something feels difficult, what someone actually needs, and how a small idea can become something useful.</p>
+          <p>I’m drawn to the space between understanding a problem and building a response. That means exploring ideas, questioning assumptions, and learning by making things — often with AI, always with curiosity.</p>
+          <p>This website is my own corner of the internet, with room for more than work. My <Link to="/portfolio">portfolio</Link> brings together what I build, my <Link to="/timeline">timeline</Link> traces the path so far, and <Link to="/contact">contact</Link> is where you can start a conversation with me.</p>
+          <p>Use the navbar for shortcuts. Tap the <button className="intro-menu-button" aria-label="Expand all pages" aria-controls="mobile-page-menu" aria-expanded={expanded} onClick={() => { haptic(); setExpanded(true); }}>+</button> for every page, or hold the round button for one second, slide to choose, and release.</p>
           </>}
         </div>
       </div>}
