@@ -163,7 +163,7 @@ test("personal destinations stay empty and only the second shortcut opens the bl
   await expect(page).toHaveURL(/\/thoughts$/);
   await expect(page.locator(".landing-content")).toHaveCount(0);
   await expect(page.locator(".landing-date")).toBeVisible();
-  for (const route of ["/work", "/projects", "/identity", "/blogs", "/photography", "/dreams"]) {
+  for (const route of ["/work", "/projects", "/identity", "/blogs", "/dreams"]) {
     await page.goto(route);
     await expect(page).toHaveURL(new RegExp(route + "$"));
     await expect(page.locator(".landing-content")).toHaveCount(0);
@@ -350,3 +350,53 @@ for (const mode of ["missing", "throws"]) {
     await expect(page).toHaveURL(/\/thoughts$/);
   });
 }
+
+for (const [width, height] of [[390, 844], [320, 568], [1440, 900]]) {
+  test(`timeline scrolls around a central focus at ${width}×${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto("/timeline/");
+    await expect(page.getByRole("heading", { name: "A life, so far.", exact: true })).toBeVisible();
+    const scroller = page.getByRole("region", { name: "Life timeline, scroll to explore" });
+    const current = page.locator(".life-event[aria-current=step]");
+    await expect(current).toContainText("Born on 6 October 2003");
+    expect(await scroller.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
+    const box = await scroller.boundingBox();
+    const first = await current.boundingBox();
+    expect(Math.abs(first.y + first.height / 2 - box.y - box.height / 2)).toBeLessThan(5);
+    await scroller.focus();
+    await page.keyboard.press("PageDown");
+    await expect(current).not.toContainText("The beginning");
+    await scroller.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await expect(current).toContainText("Flurn");
+    const last = await current.boundingBox();
+    expect(Math.abs(last.y + last.height / 2 - box.y - box.height / 2)).toBeLessThan(5);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    await page.goto("/");
+    await page.mouse.wheel(0, 1000);
+    expect(await page.evaluate(() => scrollY)).toBe(0);
+  });
+}
+test("Timeline replaces Photos and the old personal photo route redirects", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Open page menu" }).click();
+  const menu = page.getByRole("navigation", { name: "All pages" });
+  await expect(menu.getByRole("link", { name: "Photos", exact: true })).toHaveCount(0);
+  await expect(menu.getByRole("link")).toHaveCount(11);
+  await menu.getByRole("link", { name: "Timeline", exact: true }).click();
+  await expect(page).toHaveURL(/\/timeline$/);
+  await expect(page.locator(".life-event")).toHaveCount(11);
+  await page.goto("/photography/");
+  await expect(page).toHaveURL(/\/timeline$/);
+});
+test("timeline follows the dark theme and reduced-motion preference", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/timeline");
+  await page.getByRole("button", { name: "Switch to dark mode" }).click();
+  await expect(page.locator("html")).toHaveClass(/personal-dark/);
+  await expect(page.locator(".life-scroll")).toHaveCSS("scroll-snap-type", "none");
+  await expect(page.locator(".life-copy p").first()).toHaveCSS("color", "rgb(232, 232, 232)");
+  await expect(page.locator(".life-copy").first()).toHaveCSS("transform", "none");
+  await expect(page.getByRole("heading", { name: "The beginning", exact: true })).toBeVisible();
+});

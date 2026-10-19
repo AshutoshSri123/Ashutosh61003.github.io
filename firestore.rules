@@ -21,7 +21,7 @@ service cloud.firestore {
     match /sitePages/{id} {
       function validPage() {
         let d = request.resource.data;
-        return id in ['home', 'work', 'projects', 'identity', 'thoughts', 'blogs', 'photography', 'dreams']
+        return id in ['home', 'work', 'projects', 'identity', 'thoughts', 'blogs', 'photography', 'timeline', 'dreams']
           && d.keys().hasOnly(['title', 'body', 'revision', 'updatedAt'])
           && d.title is string && d.title.size() > 0 && d.title.size() <= 180
           && d.body is string && d.body.size() <= 30000

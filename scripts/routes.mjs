@@ -9,10 +9,11 @@ export const portfolioRoutes = [
   "portfolio/blogs",
   "portfolio/photography",
 ];
-// New personal pages intentionally contain only the shared header and navigation.
-export const personalRoutes = ["work", "projects", "identity", "thoughts", "blogs", "photography", "contact", "dreams", "login", "privacy"];
+// Personal entry points share the landing shell, account features, and timeline.
+export const personalRoutes = ["work", "projects", "identity", "thoughts", "blogs", "timeline", "contact", "dreams", "login", "privacy"];
 export const siteRoutes = [...portfolioRoutes, ...personalRoutes];
 export const retiredRoutes = [
+  "photography",
   "about",
   "opinions",
   "beliefs",

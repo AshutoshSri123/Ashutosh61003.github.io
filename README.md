@@ -20,3 +20,5 @@ See [SITE_DESIGN.md](SITE_DESIGN.md) for the shared typography, colors, future d
 Personal navigation includes Google Login at `/login`, a private DM inbox at `/contact`, and editable personal pages for the verified administrator `ashu.61003@gmail.com`. Readers have view access and can message the administrator. `/privacy` explains account and message handling.
 
 Use `npm run test:accounts` for Firebase emulator access-rule and Google sign-in/DM tests. Java 11+ is required. Deploy Firebase rules with `npx firebase deploy --only firestore:rules,firestore:indexes --project aichatgemma`. GitHub Pages must use GitHub Actions so runtime Firebase web configuration is generated from its existing build secret rather than checked into Git. Firebase's internal project ID remains `aichatgemma`; the public auth host is `ashutosh-srivastava-login.firebaseapp.com`.
+
+`/timeline` tells the life story on a scrollable year scale, with the central event in focus. It replaces Photos in personal navigation; `/photography` redirects to it. Administrators can edit individual timeline chapters from Login.

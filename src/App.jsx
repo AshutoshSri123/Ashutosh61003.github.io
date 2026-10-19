@@ -24,7 +24,8 @@ function Layout() {
   }, [portfolio]);
   return (
     <Routes>
-      {["/", "/work", "/projects", "/identity", "/thoughts", "/blogs", "/photography", "/contact", "/dreams", "/login", "/privacy"].map((path) => <Route key={path} path={path} element={<Landing />} />)}
+      {["/", "/work", "/projects", "/identity", "/thoughts", "/blogs", "/timeline", "/contact", "/dreams", "/login", "/privacy"].map((path) => <Route key={path} path={path} element={<Landing />} />)}
+      <Route path="/photography" element={<Navigate to="/timeline" replace />} />
       <Route
         path="/portfolio/*"
         element={

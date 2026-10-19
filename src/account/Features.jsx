@@ -6,6 +6,7 @@ import { doc, onSnapshot, runTransaction, serverTimestamp } from "firebase/fires
 import ReactMarkdown from "react-markdown";
 import { isSiteAdmin } from "./identity";
 import DirectMessages from "./Messages";
+import TimelineEditor from "./TimelineEditor";
 import "./account.css";
 
 const Account = createContext(null);
@@ -32,7 +33,7 @@ function Login() {
   const { user, loading, admin } = useAccount();
   const [error, setError] = useState("");
   if (loading) return <p role="status">Checking your session…</p>;
-  return <section className="account-login"><div><p className="account-eyebrow">Your account</p><h1>{user ? "You’re signed in." : "Welcome."}</h1>{user ? <><p className="account-email">{user.email}</p><p className="account-muted">{admin ? "Administrator · You can edit the personal pages." : "View access · You can read pages and message Ashutosh privately."}</p>{admin && <nav className="account-edit-links" aria-label="Edit pages">{["Home", "Work", "Projects", "Identity", "Thoughts", "Blogs", "Photography", "Dreams"].map(name => <Link key={name} to={name === "Home" ? "/?edit=1" : `/${name.toLowerCase()}?edit=1`}>Edit {name}</Link>)}</nav>}</> : <><p className="account-muted">Sign in to send a private message.</p><SignInButton /><p className="account-muted"><Link to="/privacy">Privacy</Link></p></>}</div>{user && <button className="account-button account-logout" onClick={async () => { try { await logout(); } catch { setError("Couldn’t log out. Please try again."); } }}>Log out</button>}<Alert>{error}</Alert></section>;
+  return <section className="account-login"><div><p className="account-eyebrow">Your account</p><h1>{user ? "You’re signed in." : "Welcome."}</h1>{user ? <><p className="account-email">{user.email}</p><p className="account-muted">{admin ? "Administrator · You can edit the personal pages." : "View access · You can read pages and message Ashutosh privately."}</p>{admin && <nav className="account-edit-links" aria-label="Edit pages">{["Home", "Work", "Projects", "Identity", "Thoughts", "Blogs", "Timeline", "Dreams"].map(name => <Link key={name} to={name === "Home" ? "/?edit=1" : `/${name.toLowerCase()}?edit=1`}>Edit {name}</Link>)}</nav>}</> : <><p className="account-muted">Sign in to send a private message.</p><SignInButton /><p className="account-muted"><Link to="/privacy">Privacy</Link></p></>}</div>{user && <button className="account-button account-logout" onClick={async () => { try { await logout(); } catch { setError("Couldn’t log out. Please try again."); } }}>Log out</button>}<Alert>{error}</Alert></section>;
 }
 const labels = { home: "Home", work: "Work", projects: "Projects", identity: "Identity", thoughts: "Thoughts", blogs: "Blogs", photography: "Photography", dreams: "Dreams" };
 function EditablePage({ id, onHomeContent }) {
@@ -83,10 +84,10 @@ function EditablePage({ id, onHomeContent }) {
     {admin && <><Alert>{error}</Alert><p role="status">{status}</p></>}
   </section>;
 }
-export default function Features({ pathname, onHomeContent }) {
+export default function Features({ pathname, onHomeContent, onTimelineContent }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => onAuthStateChanged(auth, user => { setUser(user); setLoading(false); }, () => setLoading(false)), []);
   const id = pathname === "/" ? "home" : pathname.slice(1);
-  return <Account.Provider value={{ user, loading, admin: isSiteAdmin(user) }}><Link className="account-shortcut" to="/login" aria-label="Your account">{user ? "Account" : "Login"}</Link>{id === "privacy" ? <div className="account-panel"><Privacy /></div> : id === "login" ? <div className="account-panel"><Login /></div> : id === "contact" ? <div className="account-panel account-contact"><DirectMessages /></div> : labels[id] ? <EditablePage key={id} id={id} onHomeContent={onHomeContent} /> : null}</Account.Provider>;
+  return <Account.Provider value={{ user, loading, admin: isSiteAdmin(user) }}><Link className="account-shortcut" to="/login" aria-label="Your account">{user ? "Account" : "Login"}</Link>{id === "timeline" ? <TimelineEditor onContent={onTimelineContent} /> : id === "privacy" ? <div className="account-panel"><Privacy /></div> : id === "login" ? <div className="account-panel"><Login /></div> : id === "contact" ? <div className="account-panel account-contact"><DirectMessages /></div> : labels[id] ? <EditablePage key={id} id={id} onHomeContent={onHomeContent} /> : null}</Account.Provider>;
 }

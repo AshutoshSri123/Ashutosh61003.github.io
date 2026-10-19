@@ -1,7 +1,8 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Moon, Sun, Home, Briefcase, Layers, Mail, Plus, User, BookOpen, Camera, Lightbulb, LogIn } from "lucide-react";
+import { Moon, Sun, Home, Briefcase, Layers, Mail, Plus, User, BookOpen, History, Lightbulb, LogIn } from "lucide-react";
 import "./Landing.css";
+import Timeline from "./Timeline";
 
 // Unsupported or disabled vibration must never interrupt navigation.
 function haptic(pattern = 8) {
@@ -33,9 +34,9 @@ const pages = [
   { label: "Work", to: "/work", icon: Briefcase },
   { label: "Projects", to: "/projects", icon: Layers },
   { label: "Identity", to: "/identity", icon: User },
-  { label: "Thoughts", to: "/thoughts", icon: Lightbulb, LogIn },
+  { label: "Thoughts", to: "/thoughts", icon: Lightbulb },
   { label: "Blogs", to: "/blogs", icon: BookOpen },
-  { label: "Photos", to: "/photography", icon: Camera },
+  { label: "Timeline", to: "/timeline", icon: History },
   { label: "Contact", to: "/contact", icon: Mail },
 ];
 pages.push({ label: "Dreams", to: "/dreams", icon: Lightbulb }, { label: "Login", to: "/login", icon: LogIn });
@@ -65,6 +66,7 @@ export default function Landing() {
   const navigate = useNavigate();
   const isHome = pathname === "/";
   const [homeCopy, setHomeCopy] = useState(null);
+  const [timelineContent, setTimelineContent] = useState(null);
   const [pressed, setPressed] = useState(false);
   const dockHoldTimer = useRef(null);
   const endDockHold = () => {
@@ -276,7 +278,8 @@ export default function Landing() {
           <span>This is my small space on the internet to share my work and whatever I’m curious about next. Have a look around, check out what I’ve built, or just say hello. I’d love to hear from you.</span></>}
         </p>
       </div>}
-      <React.Suspense fallback={null}><AccountFeatures pathname={pathname} onHomeContent={setHomeCopy} /></React.Suspense>
+      {pathname === "/timeline" && <Timeline content={timelineContent} />}
+      <React.Suspense fallback={null}><AccountFeatures pathname={pathname} onHomeContent={setHomeCopy} onTimelineContent={setTimelineContent} /></React.Suspense>
       <div onPointerDownCapture={(event) => {
         if (event.isPrimary && event.button === 0 && !event.target.closest(".mobile-menu-toggle")) haptic();
       }} onClickCapture={(event) => {

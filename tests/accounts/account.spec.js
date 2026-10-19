@@ -83,3 +83,19 @@ test("an older admin draft cannot overwrite a page published in another tab", as
   await expect(other.getByLabel("Page content (Markdown)")).toHaveValue("Keep this unsaved draft.");
   await other.close();
 });
+
+test("admin can edit and publish a timeline chapter for visitors", async ({ page, browser }) => {
+  await login(page, "ashu.61003@gmail.com", "Ashutosh");
+  await page.getByRole("link", { name: "Edit Timeline", exact: true }).click();
+  await expect(page.getByLabel("Timeline heading")).toHaveValue("A life, so far.");
+  await page.getByRole("group", { name: "Chapter 11", exact: true }).getByLabel("Details").fill("Started a new chapter at Flurn in Bangalore.");
+  await page.getByRole("button", { name: "Publish timeline", exact: true }).click();
+  await expect(page.getByText("Timeline published.")).toBeVisible();
+  const visitor = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await visitor.goto("http://127.0.0.1:5178/timeline/");
+  const scroller = visitor.locator(".life-scroll");
+  await scroller.evaluate(el => { el.scrollTop = el.scrollHeight; });
+  await expect(visitor.locator(".life-event[aria-current]")).toContainText("Started a new chapter at Flurn in Bangalore.");
+  await expect(visitor.getByRole("button", { name: "Edit timeline", exact: true })).toHaveCount(0);
+  await visitor.close();
+});

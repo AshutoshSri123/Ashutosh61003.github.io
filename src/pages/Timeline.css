@@ -1,0 +1,67 @@
+.life-timeline {
+  --timeline-top: 172px;
+  --timeline-bottom: 126px;
+  --timeline-row: 210px;
+  position: absolute;
+  inset: 0;
+  color: var(--landing-text);
+  pointer-events: none;
+}
+.life-heading { position: absolute; top: 70px; left: 24px; right: 24px; text-align: center; }
+.life-heading > p { color: inherit; margin: 0 0 12px; font-size: 10px; letter-spacing: .16em; opacity: .45; font-variant-numeric: tabular-nums; }
+.life-heading h1 { margin: 0 0 10px; color: inherit; font-size: clamp(25px, 3vw, 34px); font-weight: 400; line-height: 1.25; letter-spacing: -.045em; }
+.life-heading > span { font-size: 12px; opacity: .5; }
+.life-window { position: absolute; top: var(--timeline-top); bottom: var(--timeline-bottom); left: max(24px, calc((100vw - 660px)/2)); right: max(24px, calc((100vw - 660px)/2)); }
+.life-window::before { content: ""; position: absolute; pointer-events: none; top: 50%; left: 0; right: 0; height: 160px; transform: translateY(-50%); background: linear-gradient(transparent, color-mix(in srgb, var(--landing-text) 2%, transparent), transparent); }
+.life-scroll { pointer-events: auto; height: 100%; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: none; scroll-snap-type: y proximity; mask-image: linear-gradient(transparent, #000 17%, #000 83%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 17%, #000 83%, transparent); }
+.life-scroll::-webkit-scrollbar { display: none; }
+.life-scroll:focus-visible { outline: 1px solid color-mix(in srgb, currentColor 30%, transparent); outline-offset: 8px; border-radius: 8px; }
+.life-track { position: relative; margin: 0; list-style: none; padding: max(0px, calc((100svh - var(--timeline-top) - var(--timeline-bottom) - var(--timeline-row))/2)) 0; }
+.life-track::before { content: ""; position: absolute; top: 0; bottom: 0; left: 104px; width: 1px; background: color-mix(in srgb, var(--landing-text) 15%, transparent); }
+.life-track::after { content: ""; position: absolute; top: 0; bottom: 0; left: 98px; width: 7px; background: repeating-linear-gradient(to bottom, transparent 0 11px, color-mix(in srgb, var(--landing-text) 15%, transparent) 11px 12px); pointer-events: none; }
+.life-event { --focus: 0; position: relative; display: grid; grid-template-columns: 105px minmax(0, 1fr); align-items: center; min-height: var(--timeline-row); scroll-snap-align: center; }
+.life-year { display: flex; justify-content: space-between; align-items: center; gap: 4px; padding-right: 0; }
+.life-year time { max-width: 78px; font-size: 11px; line-height: 1.6; opacity: calc(.25 + var(--focus) * .75); font-variant-numeric: tabular-nums; }
+.life-year > span { height: 1px; width: 12px; flex-shrink: 0; background: currentColor; opacity: .25; transform-origin: right; transition: transform 300ms ease, opacity 300ms ease; }
+.life-event[aria-current] .life-year > span { transform: scaleX(1.7); opacity: .9; }
+.life-event[aria-current] time { font-weight: 600; }
+.life-copy { padding: 24px 4px 24px 34px; opacity: calc(.22 + var(--focus) * .78); transform: scale(calc(.96 + var(--focus) * .04)); transform-origin: left center; }
+.life-copy h2 { color: inherit; font-size: clamp(17px, 2.2vw, 21px); font-weight: 400; letter-spacing: -.025em; line-height: 1.45; margin: 0 0 10px; }
+.life-copy p { color: inherit; margin: 0; font-size: 13px; line-height: 1.8; max-width: 380px; opacity: .65; }
+.life-footnote { color: inherit; position: absolute; bottom: 58px; width: 100%; text-align: center; margin: 0; font-size: 10px; opacity: .45; line-height: 1.8; }
+.life-footnote > span:first-child { margin-left: 8px; }
+.life-date-note { display: block; font-size: 9px; opacity: .7; }
+@media (max-width: 600px) {
+  .life-timeline { --timeline-top: 176px; --timeline-bottom: max(140px, calc(env(safe-area-inset-bottom) + 130px)); --timeline-row: 210px; }
+  .life-heading { top: 88px; }
+  .life-heading > p { margin-bottom: 8px; font-size: 9px; }
+  .life-heading h1 { font-size: 26px; margin-bottom: 8px; }
+  .life-heading > span { font-size: 11px; }
+  .life-window { left: 24px; right: 24px; }
+  .life-event { grid-template-columns: 80px minmax(0, 1fr); }
+  .life-track::before { left: 79px; }
+  .life-track::after { left: 73px; }
+  .life-year time { max-width: 58px; font-size: 10px; }
+  .life-copy { padding-left: 22px; }
+  .life-copy h2 { font-size: 17px; }
+  .life-copy p { font-size: 12px; }
+  .life-footnote { bottom: max(91px, calc(env(safe-area-inset-bottom) + 81px)); }
+}
+@media (max-height: 650px) {
+  .life-timeline { --timeline-top: 140px; --timeline-bottom: 104px; --timeline-row: 200px; }
+  .life-heading { top: 68px; }
+  .life-heading > p { display: none; }
+  .life-footnote { bottom: 83px; font-size: 9px; }
+  .life-date-note { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .life-scroll { scroll-snap-type: none; }
+  .life-copy { transform: none; }
+  .life-year > span { transition: none; }
+}
+
+.timeline-editor fieldset { display: grid; gap: 16px; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); border-radius: 12px; padding: 16px; min-width: 0; }
+.timeline-editor legend { font-size: 11px; padding: 0 6px; opacity: .6; }
+.timeline-editor:not(.is-editing) { top: 68px !important; bottom: auto !important; right: 24px !important; }
+.timeline-editor.is-editing { z-index: 15; }
+@media (max-width: 600px) { .timeline-editor:not(.is-editing) { top: 66px !important; } .timeline-editor:not(.is-editing) .account-muted { display: none; } }
