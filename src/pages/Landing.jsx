@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Moon, Sun, Home, Briefcase, Layers, Mail, Plus, User, BookOpen, History, Lightbulb, LogIn } from "lucide-react";
 import "./Landing.css";
 import Timeline from "./Timeline";
+import ReactMarkdown from "react-markdown";
 
 // Unsupported or disabled vibration must never interrupt navigation.
 function haptic(pattern = 8) {
@@ -274,14 +275,16 @@ export default function Landing() {
             Ashutosh Srivastava
           </Link>
         </h1>
-        <p className="landing-subtitle">Product thinker &amp; AI builder</p>
+        <p className="landing-subtitle">A life in progress</p>
         </div>
         </header>
-        <p className="landing-intro">
-          {homeCopy ? <span style={{ whiteSpace: "pre-line" }}>{homeCopy}</span> : <><span>Hey, I’m <strong>Ashutosh</strong>. 👋 I like making things that solve real problems, and I usually learn best by trying, getting stuck, and figuring things out.</span>{" "}
-          <span>I spend a lot of my time thinking about products, playing with AI, and building little ideas into something people can actually use. I’m still learning, and that’s honestly the part I enjoy most.</span>{" "}
-          <span>This is my small space on the internet to share my work and whatever I’m curious about next. Have a look around, check out what I’ve built, or just say hello. I’d love to hear from you.</span></>}
-        </p>
+        <div className="landing-intro">
+          {homeCopy ? <ReactMarkdown components={{ a: ({ href, children }) => <Link to={href}>{children}</Link> }}>{homeCopy}</ReactMarkdown> : <>
+          <p>I’m <strong>Ashutosh</strong>, from Pratapgarh, now building a life in Bangalore. From changing schools and preparing for JEE to studying at VIT-AP and joining Flurn, I’m still learning what matters to me. My <Link to="/timeline">timeline</Link> follows that journey.</p>
+          <p>This is a home for my whole life: the <Link to="/thoughts">thoughts</Link> I’m working through, the <Link to="/blogs">stories</Link> I write, and the <Link to="/dreams">dreams</Link> I’m growing into. For what I build and do, visit my <Link to="/portfolio">professional portfolio</Link> or explore my <Link to="/projects">projects</Link>. To talk, head to <Link to="/contact">contact</Link> and send me a message.</p>
+          <p>On mobile, the navbar has shortcuts. Tap + for all pages, or hold it for one second, slide to choose, and release.</p>
+          </>}
+        </div>
       </div>}
       {pathname === "/timeline" && <Timeline content={timelineContent} />}
       <React.Suspense fallback={null}><AccountFeatures pathname={pathname} onHomeContent={setHomeCopy} onTimelineContent={setTimelineContent} /></React.Suspense>

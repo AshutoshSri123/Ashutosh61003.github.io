@@ -448,3 +448,21 @@ for (const [width, height] of [[1240, 1000], [390, 844], [320, 568], [844, 390]]
     expect(corners).toEqual({ width: 128, height: 128, corner: 0, center: 255 });
   });
 }
+
+test('life introduction links lead to pages and name uses Newsreader Italic', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator('.landing-content h1')).toHaveCSS('font-family', 'Newsreader, Georgia, serif');
+  expect(await page.evaluate(() => document.fonts.check('italic 40px Newsreader'))).toBe(true);
+  const intro = page.locator('.landing-intro');
+  await expect(intro).toContainText('whole life');
+  await expect(intro).toContainText('hold it for one second');
+  for (const [name, path] of [['timeline','/timeline'],['thoughts','/thoughts'],['stories','/blogs'],['dreams','/dreams'],['professional portfolio','/portfolio'],['projects','/projects'],['contact','/contact']]) {
+    const link = intro.getByRole('link', { name, exact: true });
+    await expect(link).toHaveAttribute('href',path);
+    await expect(link).toHaveCSS('font-weight','700');
+    expect(await link.evaluate(el => getComputedStyle(el).textDecorationLine)).toContain('underline');
+  }
+  await intro.getByRole('link',{name:'contact', exact:true}).click();
+  await expect(page).toHaveURL(/\/contact$/);
+});
