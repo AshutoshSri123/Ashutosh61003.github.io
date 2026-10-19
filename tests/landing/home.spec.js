@@ -163,7 +163,7 @@ test("personal destinations stay empty and only the second shortcut opens the bl
   await expect(page).toHaveURL(/\/thoughts$/);
   await expect(page.locator(".landing-content")).toHaveCount(0);
   await expect(page.locator(".landing-date")).toBeVisible();
-  for (const route of ["/work", "/projects", "/identity", "/blogs", "/photography", "/contact", "/dreams"]) {
+  for (const route of ["/work", "/projects", "/identity", "/blogs", "/photography", "/dreams"]) {
     await page.goto(route);
     await expect(page).toHaveURL(new RegExp(route + "$"));
     await expect(page.locator(".landing-content")).toHaveCount(0);
@@ -222,10 +222,10 @@ test("one-second hold grows the circle and steers within all grid boundaries", a
   await move(32, 0, "Projects");
   await move(-16, 0, "Work"); // Immediate reversal at the right edge.
   await move(0, 16, "Blogs");
-  await move(0, 16, "Dreams"); // The last row has only two cells.
-  await move(16, 0, "Dreams");
-  await move(0, 16, "Dreams");
-  await move(-16, 0, "Contact");
+  await move(0, 16, "Login"); // The last row has three cells.
+  await move(16, 0, "Login");
+  await move(0, 16, "Login");
+  await move(-32, 0, "Contact");
   await move(0, -16, "Identity");
   await move(0, -16, "Home");
   await move(0, -16, "Home");

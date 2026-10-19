@@ -44,6 +44,7 @@ const db = (uid) =>
         .authenticatedContext(uid, {
           firebase: { sign_in_provider: "google.com" },
           email_verified: true,
+          email: uid === owner ? "ashu.61003@gmail.com" : `${uid}@example.test`,
         })
         .firestore()
     : env.unauthenticatedContext().firestore();
@@ -391,4 +392,20 @@ test("unverified or password-only visitors cannot submit contributions", async (
     })
     .firestore();
   await assertFails(send(password, "password", "password"));
+});
+
+test("page edits require the verified administrator email, not a familiar UID", async () => {
+  const page = { title: "Work", body: "Published page", revision: 1, updatedAt: serverTimestamp() };
+  await assertFails(setDoc(doc(db(), "sitePages", "work"), page));
+  await assertFails(setDoc(doc(db("alice"), "sitePages", "work"), page));
+  const forged = env.authenticatedContext(owner, { email: "someone@example.test", email_verified: true }).firestore();
+  await assertFails(setDoc(doc(forged, "sitePages", "work"), page));
+  const unverified = env.authenticatedContext("unverified-admin", { email: "ashu.61003@gmail.com", email_verified: false }).firestore();
+  await assertFails(setDoc(doc(unverified, "sitePages", "work"), page));
+  const admin = env.authenticatedContext("google-owner", { email: "ashu.61003@gmail.com", email_verified: true }).firestore();
+  await assertSucceeds(setDoc(doc(admin, "sitePages", "work"), page));
+  await assertSucceeds(getDoc(doc(db(), "sitePages", "work")));
+  await assertFails(updateDoc(doc(admin, "sitePages", "work"), { body: "Lost update", revision: 1, updatedAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(doc(admin, "sitePages", "work"), { body: "Updated", revision: 2, updatedAt: serverTimestamp() }));
+  await assertFails(setDoc(doc(admin, "sitePages", "login"), page));
 });

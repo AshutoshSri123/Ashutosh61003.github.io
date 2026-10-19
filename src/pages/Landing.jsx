@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Moon, Sun, Home, Briefcase, Layers, Mail, Plus, User, BookOpen, Camera, Lightbulb } from "lucide-react";
+import { Moon, Sun, Home, Briefcase, Layers, Mail, Plus, User, BookOpen, Camera, Lightbulb, LogIn } from "lucide-react";
 import "./Landing.css";
 
 // Unsupported or disabled vibration must never interrupt navigation.
@@ -12,18 +12,33 @@ function haptic(pattern = 8) {
   }
 }
 
+const AccountFeatures = React.lazy(async () => {
+  try {
+    if (!import.meta.env.DEV) {
+      const response = await fetch("/firebase-public-config.json");
+      if (!response.ok) throw new Error("Account configuration unavailable");
+      globalThis.__SITE_FIREBASE_CONFIG__ = await response.json();
+    }
+    return await import("../account/Features");
+  } catch {
+    return { default: function AccountUnavailable({ pathname }) {
+      return ["/login", "/contact"].includes(pathname) ? <section style={{ maxWidth: 400 }}><h1>Connection unavailable</h1><p>Please reload to try again.</p><button onClick={() => location.reload()}>Retry</button></section> : null;
+    } };
+  }
+});
+
 const pages = [
   { label: "Home", to: "/", icon: Home },
   { label: "Portfolio", to: "/portfolio", icon: User },
   { label: "Work", to: "/work", icon: Briefcase },
   { label: "Projects", to: "/projects", icon: Layers },
   { label: "Identity", to: "/identity", icon: User },
-  { label: "Thoughts", to: "/thoughts", icon: Lightbulb },
+  { label: "Thoughts", to: "/thoughts", icon: Lightbulb, LogIn },
   { label: "Blogs", to: "/blogs", icon: BookOpen },
   { label: "Photos", to: "/photography", icon: Camera },
   { label: "Contact", to: "/contact", icon: Mail },
 ];
-pages.push({ label: "Dreams", to: "/dreams", icon: Lightbulb });
+pages.push({ label: "Dreams", to: "/dreams", icon: Lightbulb }, { label: "Login", to: "/login", icon: LogIn });
 const primaryPages = [pages[0], pages[1], pages[5], pages[8]];
 
 function LocalDateTime() {
@@ -48,6 +63,7 @@ export default function Landing() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const isHome = pathname === "/";
+  const [homeCopy, setHomeCopy] = useState(null);
   const [pressed, setPressed] = useState(false);
   const dockHoldTimer = useRef(null);
   const endDockHold = () => {
@@ -133,7 +149,7 @@ export default function Landing() {
     if (dy) state.y = event.clientY;
     const row = Math.floor(state.index / 4);
     const column = state.index % 4;
-    const nextRow = Math.max(0, Math.min(2, row + dy));
+    const nextRow = Math.max(0, Math.min(Math.ceil(pages.length / 4) - 1, row + dy));
     const lastColumn = Math.min(3, pages.length - nextRow * 4 - 1);
     const nextColumn = Math.max(0, Math.min(lastColumn, column + dx));
     const nextIndex = nextRow * 4 + nextColumn;
@@ -254,11 +270,12 @@ export default function Landing() {
           </Link>
         </h1>
         <p className="landing-intro">
-          <span>Hey, I’m <strong>Ashutosh</strong>. 👋 I like making things that solve real problems, and I usually learn best by trying, getting stuck, and figuring things out.</span>{" "}
+          {homeCopy ? <span style={{ whiteSpace: "pre-line" }}>{homeCopy}</span> : <><span>Hey, I’m <strong>Ashutosh</strong>. 👋 I like making things that solve real problems, and I usually learn best by trying, getting stuck, and figuring things out.</span>{" "}
           <span>I spend a lot of my time thinking about products, playing with AI, and building little ideas into something people can actually use. I’m still learning, and that’s honestly the part I enjoy most.</span>{" "}
-          <span>This is my small space on the internet to share my work and whatever I’m curious about next. Have a look around, check out what I’ve built, or just say hello. I’d love to hear from you.</span>
+          <span>This is my small space on the internet to share my work and whatever I’m curious about next. Have a look around, check out what I’ve built, or just say hello. I’d love to hear from you.</span></>}
         </p>
       </div>}
+      <React.Suspense fallback={null}><AccountFeatures pathname={pathname} onHomeContent={setHomeCopy} /></React.Suspense>
       <div onPointerDownCapture={(event) => {
         if (event.isPrimary && event.button === 0 && !event.target.closest(".mobile-menu-toggle")) haptic();
       }} onClickCapture={(event) => {

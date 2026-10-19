@@ -2,10 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function admin() { return signedIn() && request.auth.uid == 'AvqwmPY304eoBGWcOk536dCWgYq1'; }
+    function admin() { return signedIn() && request.auth.token.email == 'ashu.61003@gmail.com' && request.auth.token.email_verified == true; }
     function interactive() { return admin() || (signedIn() && request.auth.token.firebase.sign_in_provider == 'google.com' && request.auth.token.email_verified == true); }
     function bounded() { return request.query.limit != null && request.query.limit <= 100; }
-    function editor() { return admin() && request.time < timestamp.value(request.auth.token.auth_time * 1000) + duration.value(1, 'h'); }
+    function editor() { return signedIn() && request.auth.uid == 'AvqwmPY304eoBGWcOk536dCWgYq1' && request.time < timestamp.value(request.auth.token.auth_time * 1000) + duration.value(1, 'h'); }
     match /dreams/workspace {
       allow get: if true;
       allow list: if false;
@@ -17,6 +17,20 @@ service cloud.firestore {
           && request.resource.data.stateJson is string && request.resource.data.stateJson.size() <= 900000
           && request.resource.data.revision is int;
       }
+    }
+    match /sitePages/{id} {
+      function validPage() {
+        let d = request.resource.data;
+        return id in ['home', 'work', 'projects', 'identity', 'thoughts', 'blogs', 'photography', 'dreams']
+          && d.keys().hasOnly(['title', 'body', 'revision', 'updatedAt'])
+          && d.title is string && d.title.size() > 0 && d.title.size() <= 180
+          && d.body is string && d.body.size() <= 30000
+          && d.revision is int && d.updatedAt == request.time;
+      }
+      allow get: if true;
+      allow list, delete: if false;
+      allow create: if admin() && validPage() && request.resource.data.revision == 1;
+      allow update: if admin() && validPage() && request.resource.data.revision == resource.data.revision + 1;
     }
     match /personalContent/{id} {
       allow get: if admin() || resource.data.published == true;

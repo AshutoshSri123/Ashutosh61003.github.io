@@ -16,6 +16,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { isSiteAdmin } from "../account/identity";
 import { OWNER_UID, validateEntry } from "./model";
 export {
   collection,
@@ -79,16 +80,16 @@ export async function sendMessage(
   await runTransaction(db, async (transaction) => {
     const existing = await transaction.get(conversation);
     const previous = existing.data();
-    if (previous?.blocked && user.uid !== OWNER_UID)
+    if (previous?.blocked && !isSiteAdmin(user))
       throw new Error("This conversation is closed.");
     if (
-      user.uid !== OWNER_UID &&
+      !isSiteAdmin(user) &&
       previous?.lastMessageAt?.toMillis() > Date.now() - 5000
     )
       throw new Error(
         "Please wait a few seconds before sending another message.",
       );
-    if (!existing.exists() && user.uid === OWNER_UID)
+    if (!existing.exists() && isSiteAdmin(user))
       throw new Error("Choose an existing conversation.");
     transaction.set(message, {
       text: text.trim(),
@@ -99,7 +100,7 @@ export async function sendMessage(
     transaction.set(conversation, {
       ...(previous || {
         ownerId: user.uid,
-        ownerName: (user.uid === OWNER_UID
+        ownerName: (isSiteAdmin(user)
           ? "Ashutosh"
           : user.displayName || "Reader"
         ).slice(0, 100),
@@ -114,7 +115,7 @@ export async function sendMessage(
       lastMessageId: message.id,
       lastSenderId: user.uid,
       archived: false,
-      ...(user.uid === OWNER_UID
+      ...(isSiteAdmin(user)
         ? { adminReadAt: serverTimestamp() }
         : { userReadAt: serverTimestamp() }),
     });

@@ -10,3 +10,6 @@ test-results/
 # Local Firebase emulator output
 *-debug.log
 .firebase/
+
+# Runtime Firebase web configuration is generated during deployment.
+firebase-public-config.json

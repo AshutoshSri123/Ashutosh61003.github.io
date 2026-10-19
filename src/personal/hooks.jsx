@@ -10,7 +10,8 @@ import {
   setDoc,
   serverTimestamp,
 } from "./data";
-import { defaultSettings, errorMessage, OWNER_UID } from "./model";
+import { isSiteAdmin } from "../account/identity";
+import { defaultSettings, errorMessage } from "./model";
 const Context = createContext(null);
 export function PersonalProvider({ children }) {
   const [user, setUser] = useState(null),
@@ -50,7 +51,7 @@ export function PersonalProvider({ children }) {
       value={{
         user,
         authLoading,
-        isAdmin: user?.uid === OWNER_UID,
+        isAdmin: isSiteAdmin(user),
         settings,
         settingsError,
       }}
