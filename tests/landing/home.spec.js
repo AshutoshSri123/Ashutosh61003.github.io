@@ -478,3 +478,27 @@ for (const width of [390, 1440]) {
     await expect(page).toHaveURL(/\/timeline$/);
   });
 }
+
+test('profile name stays on one line across phone and desktop widths', async ({page}) => {
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+  for (const width of [280, 320, 360, 375, 390, 414, 430, 600, 768, 1440]) {
+    await page.setViewportSize({width,height:900});
+    const frame = await page.locator('.landing-profile').evaluate(el => {
+      const title = el.querySelector('h1');
+      const subtitle = el.querySelector('.landing-subtitle');
+      const portrait = el.querySelector('.landing-portrait').getBoundingClientRect();
+      const copy = el.querySelector('.landing-profile-copy').getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(title.querySelector('a'));
+      return {lines:range.getClientRects().length, titleOverflow:title.scrollWidth-title.clientWidth, subtitleOverflow:subtitle.scrollWidth-subtitle.clientWidth, left:portrait.left, right:copy.right, portraitHeight:portrait.height, copyHeight:copy.height, topDifference:portrait.top-copy.top};
+    });
+    expect(frame.lines, `name at ${width}`).toBe(1);
+    expect(frame.titleOverflow).toBeLessThanOrEqual(1);
+    expect(frame.subtitleOverflow).toBeLessThanOrEqual(1);
+    expect(frame.left).toBeGreaterThanOrEqual(0);
+    expect(frame.right).toBeLessThanOrEqual(width);
+    expect(frame.portraitHeight).toBeCloseTo(frame.copyHeight,0);
+    expect(frame.topDifference).toBe(0);
+  }
+});
