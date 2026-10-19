@@ -60,7 +60,8 @@ function LocalDateTime() {
 }
 
 export default function Landing() {
-  const { pathname } = useLocation();
+  const { pathname: rawPathname } = useLocation();
+  const pathname = rawPathname.replace(/\/+$/, "") || "/";
   const navigate = useNavigate();
   const isHome = pathname === "/";
   const [homeCopy, setHomeCopy] = useState(null);

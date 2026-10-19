@@ -23,6 +23,8 @@ test("login is the eleventh menu option and visitors can sign in", async ({ page
   await menu.getByRole("link").nth(10).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+  await page.goto("/login/");
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
 });
 test("reader gets view access, persistent sign-in, and logout", async ({ page }) => {
   await login(page, "reader-login@example.test", "Reader");
