@@ -657,3 +657,7 @@ html.landing-mode body {
   .landing-intro { font-size: 11px; line-height: 1.4; }
   .landing-intro p + p { margin-top: .5em; }
 }
+/* Bring the mobile portrait inward while retaining responsive single-line type. */
+@media (max-width: 600px) {
+  .landing-profile { margin-left: -8px; width: calc(100% + 26px); }
+}
