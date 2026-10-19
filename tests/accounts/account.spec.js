@@ -64,7 +64,9 @@ test("private DM delivers to admin and reply arrives live", async ({ page, brows
   await expect(admin.getByText("Hello Ashutosh, a private question.", { exact: true }).last()).toBeVisible();
   await admin.getByLabel("Your message").fill("Hello! Thanks for reaching out.");
   await admin.getByRole("button", { name: "Send", exact: true }).click();
-  await expect(page.getByText("Hello! Thanks for reaching out.", { exact: true })).toBeVisible();
+  await expect(admin.getByLabel("Your message")).toHaveValue("", { timeout: 15000 });
+  await expect(admin.getByText("Hello! Thanks for reaching out.", { exact: true }).last()).toBeVisible();
+  await expect(page.getByText("Hello! Thanks for reaching out.", { exact: true })).toBeVisible({ timeout: 15000 });
   await admin.close();
 });
 
