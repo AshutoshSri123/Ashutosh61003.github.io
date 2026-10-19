@@ -406,17 +406,45 @@ for (const colorScheme of ["light", "dark"]) {
     await page.emulateMedia({ colorScheme });
     await page.goto("/");
     const icon = page.locator('#browser-tab-icon');
-    await expect(icon).toHaveAttribute('href', `/images/ashutosh-diptych-${colorScheme}.webp`);
+    await expect(icon).toHaveAttribute('href', `/images/ashutosh-tab-${colorScheme}.svg`);
     await page.getByRole('button', { name: 'Switch to dark mode' }).click();
-    await expect(icon).toHaveAttribute('href', `/images/ashutosh-diptych-${colorScheme}.webp`);
+    await expect(icon).toHaveAttribute('href', `/images/ashutosh-tab-${colorScheme}.svg`);
     const nextTheme = colorScheme === 'dark' ? 'light' : 'dark';
     await page.emulateMedia({ colorScheme: nextTheme });
-    await expect(icon).toHaveAttribute('href', `/images/ashutosh-diptych-${nextTheme}.webp`);
+    await expect(icon).toHaveAttribute('href', `/images/ashutosh-tab-${nextTheme}.svg`);
     expect(await page.evaluate(async () => {
       const image = new Image();
       image.src = document.querySelector('#browser-tab-icon').href;
       await image.decode();
       return image.naturalWidth > 0;
     })).toBe(true);
+  });
+}
+
+for (const [width, height] of [[1240, 1000], [390, 844], [320, 568], [844, 390]]) {
+  test(`portrait and editorial introduction fit ${width}×${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    const portrait = await page.locator('.landing-portrait').boundingBox();
+    const heading = await page.locator('.landing-content h1').boundingBox();
+    const intro = await page.locator('.landing-intro').boundingBox();
+    expect(portrait.width).toBeCloseTo(portrait.height, 0);
+    expect(heading.x).toBeGreaterThanOrEqual(portrait.x + portrait.width);
+    expect(intro.y).toBeGreaterThan(portrait.y + portrait.height);
+    expect(intro.y + intro.height).toBeLessThan(height - (width <= 600 ? 90 : 10));
+    await expect(page.locator('.landing-content h1')).toHaveCSS('font-style', 'italic');
+    await expect(page.locator('.landing-portrait')).toHaveCSS('border-radius', '50%');
+    await page.emulateMedia({ colorScheme: 'dark' });
+    const corners = await page.evaluate(async () => {
+      const img = new Image();
+      img.src = document.querySelector('#browser-tab-icon').href;
+      await img.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      return { width: img.naturalWidth, height: img.naturalHeight, corner: ctx.getImageData(0, 0, 1, 1).data[3], center: ctx.getImageData(64, 64, 1, 1).data[3] };
+    });
+    expect(corners).toEqual({ width: 128, height: 128, corner: 0, center: 255 });
   });
 }

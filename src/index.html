@@ -2,14 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link id="browser-tab-icon" rel="icon" type="image/webp" href="/images/ashutosh-diptych-light.webp" />
+    <link id="browser-tab-icon" rel="icon" type="image/svg+xml" href="/images/ashutosh-tab-light.svg" />
     <script>
       (() => {
         const browserTheme = window.matchMedia('(prefers-color-scheme: dark)');
         const updateTabIcon = () => {
           document.getElementById('browser-tab-icon').href = browserTheme.matches
-            ? '/images/ashutosh-diptych-dark.webp'
-            : '/images/ashutosh-diptych-light.webp';
+            ? '/images/ashutosh-tab-dark.svg'
+            : '/images/ashutosh-tab-light.svg';
         };
         updateTabIcon();
         browserTheme.addEventListener('change', updateTabIcon);

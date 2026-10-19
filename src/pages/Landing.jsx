@@ -241,6 +241,7 @@ export default function Landing() {
         </span>
       </button>
       {isHome && <div className="landing-content">
+        <header className="landing-profile">
         <div
           className="landing-portrait"
           role="img"
@@ -263,6 +264,7 @@ export default function Landing() {
             fetchPriority="high"
           />
         </div>
+        <div className="landing-profile-copy">
         <h1>
           <Link
             to="/portfolio"
@@ -272,6 +274,9 @@ export default function Landing() {
             Ashutosh Srivastava
           </Link>
         </h1>
+        <p className="landing-subtitle">Product thinker &amp; AI builder</p>
+        </div>
+        </header>
         <p className="landing-intro">
           {homeCopy ? <span style={{ whiteSpace: "pre-line" }}>{homeCopy}</span> : <><span>Hey, I’m <strong>Ashutosh</strong>. 👋 I like making things that solve real problems, and I usually learn best by trying, getting stuck, and figuring things out.</span>{" "}
           <span>I spend a lot of my time thinking about products, playing with AI, and building little ideas into something people can actually use. I’m still learning, and that’s honestly the part I enjoy most.</span>{" "}
