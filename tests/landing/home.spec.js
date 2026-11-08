@@ -32,7 +32,7 @@ for (const [width, height] of [
     expect(errors).toEqual([]);
   });
 }
-test("theme transitions together and both new portraits remain preloaded", async ({
+test("theme switches immediately and both portraits remain preloaded", async ({
   page,
 }) => {
   await page.goto("/");
@@ -42,8 +42,8 @@ test("theme transitions together and both new portraits remain preloaded", async
     ),
   );
   await expect(page.locator(".landing-portrait-light")).toHaveAttribute("src", "/images/ashutosh-diptych-light.webp");
-  expect(await page.locator("body").evaluate(el => getComputedStyle(el).transitionDuration)).toContain("0.48s");
-  expect(await page.locator(".landing-portrait-dark").evaluate(el => getComputedStyle(el).transitionDuration)).toBe("0.48s");
+  expect(await page.locator("body").evaluate(el => getComputedStyle(el).transitionDuration)).toBe("0s");
+  expect(await page.locator(".landing-portrait-dark").evaluate(el => getComputedStyle(el).transitionDuration)).toBe("0s");
   const images = [];
   page.on("request", (r) => {
     if (r.resourceType() === "image") images.push(r.url());
@@ -541,5 +541,36 @@ for (const width of [601, 844, 1440]) {
     await nav.getByRole('link', { name: 'Timeline', exact: true }).click();
     await expect(page).toHaveURL(/\/timeline$/);
     await expect(nav).toBeVisible();
+  });
+}
+
+for (const width of [390, 1440]) {
+  test(`theme keeps text readable and does not restart entrance at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await page.locator('.landing-intro > p').last().evaluate(async el => {
+      await Promise.all(el.getAnimations().map(animation => animation.finished));
+    });
+    for (const mode of ['dark', 'light', 'dark', 'light']) {
+      await page.getByRole('button', { name: `Switch to ${mode} mode` }).click();
+      const samples = await page.evaluate(async () => {
+        const result = [];
+        for (let frame = 0; frame < 12; frame++) {
+          await new Promise(requestAnimationFrame);
+          const text = getComputedStyle(document.querySelector('.landing-intro p'));
+          const body = getComputedStyle(document.body);
+          result.push({ color: text.color, background: body.backgroundColor, opacity: text.opacity,
+            animations: document.querySelector('.landing-profile').getAnimations().length });
+        }
+        return result;
+      });
+      expect(samples.every(sample => sample.color === (mode === 'dark' ? 'rgb(232, 232, 232)' : 'rgb(34, 34, 34)') && sample.background === (mode === 'dark' ? 'rgb(4, 4, 4)' : 'rgb(252, 252, 252)') && sample.opacity === '1' && sample.animations === 0)).toBe(true);
+    }
+    await page.reload();
+    const entrance = await page.locator('.landing-profile').evaluate(el => getComputedStyle(el).animationName);
+    expect(entrance).toBe('landing-text-enter');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(page.locator('.landing-profile')).toHaveCSS('animation-name', 'none');
+    await expect(page.locator('.landing-intro p').first()).toHaveCSS('animation-name', 'none');
   });
 }
