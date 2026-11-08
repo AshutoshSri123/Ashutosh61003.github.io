@@ -545,31 +545,32 @@ for (const width of [601, 844, 1440]) {
 }
 
 for (const width of [390, 1440]) {
-  test(`theme keeps text readable and does not restart entrance at ${width}px`, async ({ page }) => {
+  test(`theme replays the reload entrance at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
-    await page.locator('.landing-intro > p').last().evaluate(async el => {
+    const finishEntrance = () => page.locator('.landing-intro > p').last().evaluate(async el => {
       await Promise.all(el.getAnimations().map(animation => animation.finished));
     });
+    await finishEntrance();
     for (const mode of ['dark', 'light', 'dark', 'light']) {
       await page.getByRole('button', { name: `Switch to ${mode} mode` }).click();
-      const samples = await page.evaluate(async () => {
-        const result = [];
-        for (let frame = 0; frame < 12; frame++) {
-          await new Promise(requestAnimationFrame);
-          const text = getComputedStyle(document.querySelector('.landing-intro p'));
-          const body = getComputedStyle(document.body);
-          result.push({ color: text.color, background: body.backgroundColor, opacity: text.opacity,
-            animations: document.querySelector('.landing-profile').getAnimations().length });
-        }
-        return result;
-      });
-      expect(samples.every(sample => sample.color === (mode === 'dark' ? 'rgb(232, 232, 232)' : 'rgb(34, 34, 34)') && sample.background === (mode === 'dark' ? 'rgb(4, 4, 4)' : 'rgb(252, 252, 252)') && sample.opacity === '1' && sample.animations === 0)).toBe(true);
+      const state = await page.evaluate(() => ({
+        background: getComputedStyle(document.body).backgroundColor,
+        color: getComputedStyle(document.querySelector('.landing-intro p')).color,
+        profile: document.querySelector('.landing-profile').getAnimations().map(a => a.animationName),
+        paragraph: document.querySelector('.landing-intro p').getAnimations().map(a => a.animationName),
+        navigation: document.querySelector(innerWidth > 600 ? '.desktop-navigation' : '.mobile-navigation').getAnimations().map(a => a.animationName),
+      }));
+      expect(state.background).toBe(mode === 'dark' ? 'rgb(4, 4, 4)' : 'rgb(252, 252, 252)');
+      expect(state.color).toBe(mode === 'dark' ? 'rgb(232, 232, 232)' : 'rgb(34, 34, 34)');
+      expect(state.profile).toContain('landing-text-enter');
+      expect(state.paragraph).toContain('landing-text-enter');
+      expect(state.navigation).toContain('landing-chrome-enter');
+      await finishEntrance();
+      await expect(page.locator('.landing-intro p').first()).toHaveCSS('opacity', '1');
     }
-    await page.reload();
-    const entrance = await page.locator('.landing-profile').evaluate(el => getComputedStyle(el).animationName);
-    expect(entrance).toBe('landing-text-enter');
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.getByRole('button', { name: 'Switch to dark mode' }).click();
     await expect(page.locator('.landing-profile')).toHaveCSS('animation-name', 'none');
     await expect(page.locator('.landing-intro p').first()).toHaveCSS('animation-name', 'none');
   });

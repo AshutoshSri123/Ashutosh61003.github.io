@@ -208,6 +208,7 @@ export default function Landing() {
     endDockHold();
     setSelection(-1);
   }, [pathname]);
+  const pageRef = useRef(null);
   const [dark, setDark] = useState(() => {
     try {
       return localStorage.getItem("personal-theme") === "dark";
@@ -217,6 +218,14 @@ export default function Landing() {
   });
   useLayoutEffect(() => {
     document.documentElement.classList.toggle("personal-dark", dark);
+    // Restart CSS entrances without remounting forms, navigation, or account state.
+    const entranceElements = [...(pageRef.current?.querySelectorAll("*") || [])]
+      .filter((element) => /landing-(text|chrome)-enter/.test(getComputedStyle(element).animationName));
+    entranceElements.forEach((element) => { element.style.animation = "none"; });
+    if (entranceElements.length) {
+      void pageRef.current.offsetHeight;
+      entranceElements.forEach((element) => { element.style.removeProperty("animation"); });
+    }
     try {
       localStorage.setItem("personal-theme", dark ? "dark" : "light");
     } catch {
@@ -225,7 +234,7 @@ export default function Landing() {
     return () => document.documentElement.classList.remove("personal-dark");
   }, [dark]);
   return (
-    <main className="landing-page" aria-label="Ashutosh Srivastava">
+    <main ref={pageRef} className="landing-page" aria-label="Ashutosh Srivastava">
       <LocalDateTime />
       <button
         className="landing-theme"
