@@ -124,14 +124,11 @@ export default function Landing() {
     suppressClick.current = false;
     endDockHold();
     event.currentTarget.setPointerCapture(event.pointerId);
-    const state = { x: event.clientX, y: event.clientY, held: false, moved: false, opened: !expanded, index: Math.max(0, pages.findIndex((page) => page.to === pathname)) };
-    state.timer = window.setTimeout(() => {
-      state.held = true;
-      setExpanded(true);
-      setSteering(true);
-      haptic([14, 24, 20]);
-      setSelection(state.index);
-    }, 1000);
+    const state = { x: event.clientX, y: event.clientY, held: true, moved: false, opened: !expanded, index: Math.max(0, pages.findIndex((page) => page.to === pathname)) };
+    setExpanded(true);
+    setSteering(true);
+    haptic([14, 24, 20]);
+    setSelection(state.index);
     gesture.current = state;
     haptic(state.opened ? [8, 20, 12] : 8);
     if (state.opened) setExpanded(true);
@@ -175,6 +172,7 @@ export default function Landing() {
     if (state.held) {
       if (!cancelled) haptic(12);
       if (cancelled) setExpanded(false);
+      if (!cancelled && !state.moved && !state.opened) setExpanded(false);
       if (!cancelled && state.moved && state.index >= 0) {
         navigate(pages[state.index].to);
         setExpanded(false);
@@ -283,12 +281,20 @@ export default function Landing() {
           <p>I’m <strong>Ashutosh</strong>, a VIT-AP graduate interested in products, people, and the thinking that connects them. I like asking why something feels difficult, what someone actually needs, and how a small idea can become something useful.</p>
           <p>I’m drawn to the space between understanding a problem and building a response. That means exploring ideas, questioning assumptions, and learning by making things — often with AI, always with curiosity.</p>
           <p>This website is my own corner of the internet, with room for more than work. My <Link to="/portfolio">portfolio</Link> brings together what I build, my <Link to="/timeline">timeline</Link> traces the path so far, and <Link to="/contact">contact</Link> is where you can start a conversation with me.</p>
-          <p>Use the navbar for shortcuts. Tap the <button className="intro-menu-button" aria-label="Expand all pages" aria-controls="mobile-page-menu" aria-expanded={expanded} onClick={() => { haptic(); setExpanded(true); }}>+</button> for every page, or hold the round button for one second, slide to choose, and release.</p>
+          <p><span className="desktop-nav-help">Use the navbar below to explore every page.</span><span className="mobile-nav-help">Use the navbar for shortcuts. Tap the <button className="intro-menu-button" aria-label="Expand all pages" aria-controls="mobile-page-menu" aria-expanded={expanded} onClick={() => { haptic(); setExpanded(true); }}>+</button> for every page, or press the round button to steer immediately, slide to choose, and release.</span></p>
           </>}
         </div>
       </div>}
       {pathname === "/timeline" && <Timeline content={timelineContent} />}
       <React.Suspense fallback={null}><AccountFeatures pathname={pathname} onHomeContent={setHomeCopy} onTimelineContent={setTimelineContent} /></React.Suspense>
+      <nav className="desktop-navigation" aria-label="Desktop navigation">
+        {pages.map(({ label, to, icon: Icon }) => (
+          <Link key={label} to={to} aria-current={pathname === to ? "page" : undefined}>
+            <Icon size={23} strokeWidth={1.6} aria-hidden="true" />
+            <span>{label}</span>
+          </Link>
+        ))}
+      </nav>
       <div onPointerDownCapture={(event) => {
         if (event.isPrimary && event.button === 0 && !event.target.closest(".mobile-menu-toggle")) haptic();
       }} onClickCapture={(event) => {

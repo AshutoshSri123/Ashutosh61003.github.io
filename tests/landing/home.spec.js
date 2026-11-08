@@ -196,7 +196,7 @@ test("holding the dock reveals labels, and holding and sliding the plus selects 
   await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-expanded/);
 });
 
-test("one-second hold grows the circle and steers within all grid boundaries", async ({ page }) => {
+test("press immediately grows the circle and steers within all grid boundaries", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   const toggle = page.locator(".mobile-menu-toggle");
@@ -205,8 +205,7 @@ test("one-second hold grows the circle and steers within all grid boundaries", a
   await page.mouse.move(x, y);
   await page.mouse.down();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await page.waitForTimeout(500);
-  await expect(page.locator(".mobile-navigation")).not.toHaveClass(/is-steering/);
+  // Pointer down activates steering without advancing a hold timer.
   await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
   await expect(toggle).toHaveCSS("transform", "matrix(1.4, 0, 0, 1.4, 0, 0)");
   await expect(toggle.locator("svg")).toHaveCSS("opacity", "0");
@@ -319,15 +318,15 @@ test("navigation pulses for touch, hold, each new selection and release", async 
   const x = box.x + 29, y = box.y + 29;
   await page.mouse.move(x, y);
   await page.mouse.down();
-  expect(await page.evaluate(() => window.hapticCalls)).toEqual([[8, 20, 12]]);
+
   await expect(page.locator(".mobile-navigation")).toHaveClass(/is-steering/);
-  expect(await page.evaluate(() => window.hapticCalls)).toEqual([[8, 20, 12], [14, 24, 20]]);
+  expect(await page.evaluate(() => window.hapticCalls)).toEqual([[14, 24, 20], [8, 20, 12]]);
   await page.mouse.move(x + 16, y);
   await expect(page.locator(".gesture-selected")).toHaveText("Portfolio");
   await page.mouse.move(x + 32, y);
   await expect(page.locator(".gesture-selected")).toHaveText("Work");
   await page.mouse.move(x + 32, y - 16); // Clamped edge does not pulse.
-  expect(await page.evaluate(() => window.hapticCalls)).toEqual([[8, 20, 12], [14, 24, 20], 10, 10]);
+  expect(await page.evaluate(() => window.hapticCalls)).toEqual([[14, 24, 20], [8, 20, 12], 10, 10]);
   await page.mouse.move(x + 16, y - 16);
   await expect(page.locator(".gesture-selected")).toHaveText("Portfolio");
   await page.mouse.move(x, y - 16);
@@ -456,7 +455,7 @@ test('life introduction links lead to pages and name uses Newsreader Italic', as
   expect(await page.evaluate(() => document.fonts.check('italic 40px Newsreader'))).toBe(true);
   const intro = page.locator('.landing-intro');
   await expect(intro).toContainText('VIT-AP graduate');
-  await expect(intro).toContainText('hold the round button for one second');
+  await expect(intro).toContainText('press the round button to steer immediately');
   for (const [name, path] of [['timeline','/timeline'],['portfolio','/portfolio'],['contact','/contact']]) {
     const link = intro.getByRole('link', { name, exact: true });
     await expect(link).toHaveAttribute('href',path);
@@ -467,7 +466,7 @@ test('life introduction links lead to pages and name uses Newsreader Italic', as
   await expect(page).toHaveURL(/\/contact$/);
 });
 
-for (const width of [390, 1440]) {
+for (const width of [390]) {
   test(`inline plus opens full navbar at width ${width}`, async ({page}) => {
     await page.setViewportSize({width,height:900});
     await page.goto('/');
@@ -522,3 +521,25 @@ test('desktop introduction uses a centered narrow column and groups name with su
     expect(gap).toBeGreaterThanOrEqual(-1);
   }
 });
+
+for (const width of [601, 844, 1440]) {
+  test(`desktop shows all labeled destinations in one row at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    const nav = page.getByRole('navigation', { name: 'Desktop navigation' });
+    await expect(nav).toBeVisible();
+    await expect(nav.getByRole('link')).toHaveCount(11);
+    await expect(page.locator('.mobile-menu-toggle')).toBeHidden();
+    const boxes = await nav.getByRole('link').evaluateAll(links => links.map(link => {
+      const box = link.getBoundingClientRect();
+      const label = link.querySelector('span').getBoundingClientRect();
+      const icon = link.querySelector('svg').getBoundingClientRect();
+      return { y: box.y, right: box.right, below: label.top >= icon.bottom, text: link.textContent };
+    }));
+    expect(new Set(boxes.map(box => box.y)).size).toBe(1);
+    expect(boxes.every(box => box.below && box.text && box.right <= width)).toBe(true);
+    await nav.getByRole('link', { name: 'Timeline', exact: true }).click();
+    await expect(page).toHaveURL(/\/timeline$/);
+    await expect(nav).toBeVisible();
+  });
+}

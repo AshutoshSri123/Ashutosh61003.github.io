@@ -661,3 +661,45 @@ html.landing-mode body {
 @media (max-width: 600px) {
   .landing-profile { margin-left: -8px; width: calc(100% + 26px); }
 }
+
+/* Desktop keeps every destination and its label in one persistent row. */
+.desktop-navigation, .desktop-nav-help { display: none; }
+@media (min-width: 601px) {
+  .landing-page .mobile-navigation, .mobile-nav-help { display: none; }
+  .desktop-nav-help { display: inline; }
+  .desktop-navigation {
+    position: fixed;
+    z-index: 20;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: repeat(11, minmax(0, 1fr));
+    width: min(880px, calc(100% - 32px));
+    padding: 6px;
+    border: 1px solid #d5d5d5;
+    border-radius: 24px;
+    background: #f1f1f1;
+    box-shadow: inset 0 1px 1px #ffffff12, 0 4px 20px #00000008;
+  }
+  .desktop-navigation a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 0;
+    min-height: 56px;
+    border-radius: 18px;
+    font-size: clamp(9px, 1.1vw, 12px);
+    line-height: 1.4;
+    text-decoration: none;
+  }
+  .desktop-navigation a[aria-current], .desktop-navigation a:hover { background: #e5e5e5; }
+  .personal-dark .desktop-navigation { background: #171719; border-color: #363638; }
+  .personal-dark .desktop-navigation a[aria-current], .personal-dark .desktop-navigation a:hover { background: #29292b; }
+}
+@media (max-width: 600px) {
+  .is-steering .mobile-menu-toggle,
+  .is-steering .mobile-menu-toggle svg { transition: none; }
+}
